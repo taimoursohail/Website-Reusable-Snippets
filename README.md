@@ -42,3 +42,5 @@ This repo is solo-built for now. Suggestions and feedback are welcome — drop t
 ## 📄 License
 
 MIT — free to use, modify, and share.
+
+-----------------------------------------------------------------------
