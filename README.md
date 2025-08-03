@@ -1,4 +1,4 @@
-# 🌐 Reusable Website Components by Taimour S.
+# 🌐 Reusable Website Snippets by Taimour S.
 
 A collection of modern, lightweight, and reusable HTML CSS components — perfect for fast development and beautiful UI.
 
@@ -9,7 +9,7 @@ A collection of modern, lightweight, and reusable HTML CSS components — perfec
 - Static HTML sites
 - Custom web projects
 
-## ✨ Components Included
+## ✨ Snippets Included
 
 ✅ Buttons  
 ✅ Navigation Menus  
