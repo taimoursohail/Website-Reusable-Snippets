@@ -1,0 +1,27 @@
+// Put it in the function.php
+
+// handling fee of 3.5% after shipping, before total
+add_action('woocommerce_cart_calculate_fees', 'add_handling_fee_percentage', 20, 1);
+function add_handling_fee_percentage($cart) {
+    if (is_admin() && !defined('DOING_AJAX')) return;
+
+    // Avoid double-adding the fee
+    if (did_action('woocommerce_cart_calculate_fees') >= 2) return;
+
+    // Calculate current total before adding this fee
+    $cart_total_before_fee = $cart->get_subtotal() + $cart->get_shipping_total() + $cart->get_shipping_tax();
+
+    // 3.5% handling fee
+    $handling_fee = ($cart_total_before_fee * 3.5) / 100;
+
+    // Add fee
+    $cart->add_fee(__('Handling Fees', 'your-textdomain'), $handling_fee, true);
+}
+
+// Reorder fee so it appears after shipping but before total
+add_filter('woocommerce_cart_totals_order_total_html', function($value) {
+    // This hook doesn't allow reordering easily — to move fee visually,
+    // you may need to override cart-totals.php in your child theme:
+    //   woocommerce/cart/cart-totals.php
+    return $value;
+}, 10, 1);
