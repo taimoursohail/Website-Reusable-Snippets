@@ -1,0 +1,116 @@
+// Apply this snippet in you child-theme's function.php
+
+add_action('admin_init', function () {
+    $user = wp_get_current_user();
+
+    // Only apply to shop_manager role
+    if (!in_array('shop_manager', (array) $user->roles, true)) {
+        return;
+    }
+
+    // Skip for AJAX, REST API, cron, or WP-CLI
+    if (wp_doing_ajax() || wp_doing_cron() || defined('REST_REQUEST') || defined('WP_CLI')) {
+        return;
+    }
+
+    global $pagenow;
+
+    // Define whitelist: allowed admin pages for shop managers
+    $allowed_pages = [
+        'index.php', // Dashboard (optional)
+        'edit.php',  // Orders, products, coupons
+        'post.php',  // Single order/product/coupon edit
+        'post-new.php', // Add new product/coupon
+        'edit-tags.php', // Product categories/tags
+        'admin.php', // WooCommerce settings pages
+    ];
+
+    // Also allow only certain post types for edit.php/post.php
+    $allowed_post_types = [
+        'shop_order',
+        'product',
+        'shop_coupon',
+        'product_variation'
+    ];
+
+    $is_allowed = false;
+
+    // Check if current page is allowed
+    if (in_array($pagenow, $allowed_pages, true)) {
+        // If it's a post list/edit screen, check post_type
+        if (in_array($pagenow, ['edit.php', 'post.php', 'post-new.php'], true)) {
+            $current_type = $_GET['post_type'] ?? get_post_type($_GET['post'] ?? 0);
+            if (!$current_type || in_array($current_type, $allowed_post_types, true)) {
+                $is_allowed = true;
+            }
+        } else {
+            $is_allowed = true;
+        }
+    }
+
+    // If not allowed, redirect to orders
+    if (!$is_allowed) {
+        wp_safe_redirect(
+            add_query_arg(
+                'shop_manager_restricted',
+                urlencode('You can only manage shop-related operations.'),
+                admin_url('edit.php?post_type=shop_order')
+            )
+        );
+        exit;
+    }
+});
+
+/**
+ * Remove all non-shop menus for shop managers
+ */
+add_action('admin_menu', function () {
+    $user = wp_get_current_user();
+
+    if (!in_array('shop_manager', (array) $user->roles, true)) {
+        return;
+    }
+
+    global $menu, $submenu;
+
+    // Allowed top-level menu slugs
+    $allowed_menus = [
+        'index.php', // Dashboard
+        'woocommerce', // WooCommerce main
+        'edit.php?post_type=product', // Products
+        'edit.php?post_type=shop_order', // Orders
+        'edit.php?post_type=shop_coupon', // Coupons
+    ];
+
+    // Remove all menus not in allowed list
+    foreach ($menu as $index => $item) {
+        if (!in_array($item[2], $allowed_menus, true)) {
+            remove_menu_page($item[2]);
+        }
+    }
+
+    // Optional: prune WooCommerce submenus to keep it shop-related only
+    if (isset($submenu['woocommerce'])) {
+        $allowed_wc_submenus = [
+            'wc-admin&path=/analytics/orders',
+            'edit.php?post_type=shop_order',
+            'edit.php?post_type=product',
+            'edit.php?post_type=shop_coupon',
+            'wc-settings',
+        ];
+        foreach ($submenu['woocommerce'] as $index => $subitem) {
+            if (!in_array($subitem[2], $allowed_wc_submenus, true)) {
+                unset($submenu['woocommerce'][$index]);
+            }
+        }
+    }
+}, 999);
+
+/**
+ * Show admin notice if redirected
+ */
+add_action('admin_notices', function () {
+    if (isset($_GET['shop_manager_restricted']) && current_user_can('shop_manager') && !current_user_can('administrator')) {
+        echo '<div class="notice notice-error is-dismissible"><p>' . esc_html($_GET['shop_manager_restricted']) . '</p></div>';
+    }
+});
