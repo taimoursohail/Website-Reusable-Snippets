@@ -1,0 +1,40 @@
+
+add_action('woocommerce_product_bulk_edit_start', 'custom_bulk_edit_remove_multiple_product_categories');
+function custom_bulk_edit_remove_multiple_product_categories() {
+    $categories = get_terms([
+        'taxonomy' => 'product_cat',
+        'hide_empty' => false,
+    ]);
+    ?>
+    <div class="inline-edit-group">
+        <label class="alignleft">
+            <span class="title">Delete Categories</span>
+            <span class="input-text-wrap">
+                <select name="remove_product_cats[]" multiple="multiple" class="remove_product_cats" style="height: 100px;">
+                    <option value="">Select categories to remove</option>
+                    <?php foreach ($categories as $category) : ?>
+                        <option value="<?php echo esc_attr($category->term_id); ?>">
+                            <?php echo esc_html($category->name); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </span>
+        </label>
+    </div>
+    <?php
+}
+
+add_action('woocommerce_product_bulk_edit_save', 'custom_bulk_edit_remove_multiple_product_categories_save', 9999);
+function custom_bulk_edit_remove_multiple_product_categories_save($product) {
+    $post_id = $product->get_id();
+    if (isset($_REQUEST['remove_product_cats']) && is_array($_REQUEST['remove_product_cats'])) {
+        $cats_to_remove = array_map('intval', $_REQUEST['remove_product_cats']); // Sanitize input
+        $categories = $product->get_category_ids();
+        $updated_categories = array_diff($categories, $cats_to_remove); // Remove selected categories
+        if (empty($updated_categories)) {
+            $updated_categories = [wc_get_default_product_category()]; // Assign default if empty
+        }
+        $product->set_category_ids($updated_categories);
+        $product->save();
+    }
+}
