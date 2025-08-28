@@ -1,0 +1,66 @@
+// Added bulk actions for setting display type on product categories admin screen
+add_filter('bulk_actions-edit-product_cat', 'add_bulk_action_set_display_type');
+function add_bulk_action_set_display_type($actions) {
+    $actions['set_display_type_default'] = __('Set Display Type: Default', 'woocommerce');
+    $actions['set_display_type_products'] = __('Set Display Type: Products', 'woocommerce');
+    $actions['set_display_type_subcategories'] = __('Set Display Type: Subcategories', 'woocommerce');
+    $actions['set_display_type_both'] = __('Set Display Type: Both', 'woocommerce');
+    return $actions;
+}
+
+// Handle the bulk action for setting display type
+add_action('admin_action_set_display_type_default', 'handle_bulk_display_type_change');
+add_action('admin_action_set_display_type_products', 'handle_bulk_display_type_change');
+add_action('admin_action_set_display_type_subcategories', 'handle_bulk_display_type_change');
+add_action('admin_action_set_display_type_both', 'handle_bulk_display_type_change');
+
+function handle_bulk_display_type_change() {
+    // Verify user permissions and taxonomy
+    if (!current_user_can('manage_product_terms') || !isset($_REQUEST['taxonomy']) || $_REQUEST['taxonomy'] !== 'product_cat') {
+        wp_die(__('You do not have permission to edit product categories.', 'woocommerce'));
+    }
+
+    // Get selected category IDs from delete_tags (WooCommerce uses this for bulk actions)
+    $category_ids = isset($_REQUEST['delete_tags']) ? array_map('intval', (array)$_REQUEST['delete_tags']) : [];
+
+    if (empty($category_ids)) {
+        wp_die(__('No categories selected.', 'woocommerce'));
+    }
+
+    // Determine the display type from the action
+    $action = current_action();
+    $display_type = str_replace('admin_action_set_display_type_', '', $action);
+
+    // Map action to WooCommerce display type values
+    $display_types = [
+        'default' => '',
+        'products' => 'products',
+        'subcategories' => 'subcategories',
+        'both' => 'both'
+    ];
+
+    $new_display_type = isset($display_types[$display_type]) ? $display_types[$display_type] : '';
+
+    // Update display type for each selected category
+    foreach ($category_ids as $category_id) {
+        update_term_meta($category_id, 'display_type', $new_display_type);
+    }
+
+    // Redirect back to the product categories page with a success message
+    $redirect_url = add_query_arg([
+        'taxonomy' => 'product_cat',
+        'post_type' => 'product',
+        'message' => 'display_type_updated',
+    ], admin_url('edit-tags.php'));
+
+    wp_safe_redirect($redirect_url);
+    exit;
+}
+
+// Add admin notice for successful bulk action
+add_action('admin_notices', 'bulk_display_type_admin_notice');
+function bulk_display_type_admin_notice() {
+    if (isset($_GET['message']) && $_GET['message'] === 'display_type_updated' && isset($_GET['taxonomy']) && $_GET['taxonomy'] === 'product_cat') {
+        echo '<div class="notice notice-success is-dismissible"><p>' . __('Category display types updated successfully.', 'woocommerce') . '</p></div>';
+    }
+}
