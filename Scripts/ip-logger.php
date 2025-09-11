@@ -66,7 +66,8 @@ add_action('admin_menu', function() {
     add_menu_page(
         'IP Logs',
         'IP Logs',
-        'manage_options',
+        // Only Visible to administrators
+        'manage_options', //If you want to use for woo shop managers use this replace with this 'manage_woocommerce';
         'tiny-ip-logs',
         'tiny_ip_logs_page',
         'dashicons-admin-site',
