@@ -11,3 +11,5 @@ function your_function_name() {
 }
 
 add_action('wp_enqueue_scripts', 'your_function_name');
+
+// 'wp_enqueue_scripts' is called a default hook; you must read how many default hooks there are in WP.
