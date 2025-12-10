@@ -1,0 +1,32 @@
+// SHOP MANAGER ACCESS SETTIGNS:
+add_action('admin_menu', function() {
+    $user = wp_get_current_user();
+
+    // Only run for Shop Manager
+    if ( ! in_array('shop_manager', (array) $user->roles) ) {
+        return;
+    }
+
+    // ───── Your existing restrictions (unchanged) ─────
+    remove_menu_page('edit.php?post_type=page');                    // Pages
+    remove_menu_page('themes.php');                                 // Appearance
+    remove_menu_page('edit.php?post_type=elementor_library');      // Elementor Templates
+    remove_menu_page('tools.php');                                  // Tools
+    remove_menu_page('users.php');                                  // Users
+    remove_menu_page('profile.php');                                // Their profile
+
+    // ───── NEW: Hide ONLY WooCommerce Settings ─────
+    remove_submenu_page( 'woocommerce', 'wc-settings' );           // Main Settings tab
+    remove_submenu_page( 'woocommerce', 'wc-status' );             // Status
+    remove_submenu_page( 'woocommerce', 'wc-addons' );             // Extensions
+
+    // Hide every single Settings sub-tab (General, Products, Tax, Shipping, etc.)
+    remove_submenu_page( 'wc-settings', 'wc-settings-general' );
+    remove_submenu_page( 'wc-settings', 'wc-settings-products' );
+    remove_submenu_page( 'wc-settings', 'wc-settings-tax' );
+    remove_submenu_page( 'wc-settings', 'wc-settings-shipping' );
+    remove_submenu_page( 'wc-settings', 'wc-settings-checkout' );
+    remove_submenu_page( 'wc-settings', 'wc-settings-account' );
+    remove_submenu_page( 'wc-settings', 'wc-settings-email' );
+    remove_submenu_page( 'wc-settings', 'wc-settings-advanced' );
+}, 999 );
